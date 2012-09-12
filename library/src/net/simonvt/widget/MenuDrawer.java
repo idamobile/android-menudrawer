@@ -1,7 +1,6 @@
 package net.simonvt.widget;
 
 import net.simonvt.menudrawer.R;
-
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
@@ -238,6 +237,7 @@ public class MenuDrawer extends ViewGroup {
      * Runnable used when animating the drawer open/closed.
      */
     private final Runnable mDragRunnable = new Runnable() {
+        @Override
         public void run() {
             postAnimationInvalidate();
         }
@@ -360,11 +360,27 @@ public class MenuDrawer extends ViewGroup {
         animateContent(true, 0);
     }
 
+    public void openMenu(boolean withAnimation) {
+        if (withAnimation) {
+            openMenu();
+        } else {
+            setContentLeft(mMenuWidth);
+        }
+    }
+
     /**
      * Closes the menu.
      */
     public void closeMenu() {
         animateContent(false, 0);
+    }
+
+    public void closeMenu(boolean withAnimation) {
+        if (withAnimation) {
+            closeMenu();
+        } else {
+            setContentLeft(0);
+        }
     }
 
     /**
@@ -440,34 +456,38 @@ public class MenuDrawer extends ViewGroup {
         if (state != mDrawerState) {
             final int oldState = mDrawerState;
             mDrawerState = state;
-            if (mOnDrawerStateChangeListener != null) mOnDrawerStateChangeListener.onDrawerStateChange(oldState, state);
-            if (DEBUG) logDrawerState(state);
+            if (mOnDrawerStateChangeListener != null) {
+                mOnDrawerStateChangeListener.onDrawerStateChange(oldState, state);
+            }
+            if (DEBUG) {
+                logDrawerState(state);
+            }
         }
     }
 
     private void logDrawerState(int state) {
         switch (state) {
-            case STATE_CLOSED:
-                Log.d(TAG, "[DrawerState] STATE_CLOSED");
-                break;
+        case STATE_CLOSED:
+            Log.d(TAG, "[DrawerState] STATE_CLOSED");
+            break;
 
-            case STATE_CLOSING:
-                Log.d(TAG, "[DrawerState] STATE_CLOSING");
-                break;
+        case STATE_CLOSING:
+            Log.d(TAG, "[DrawerState] STATE_CLOSING");
+            break;
 
-            case STATE_DRAGGING:
-                Log.d(TAG, "[DrawerState] STATE_DRAGGING");
-                break;
+        case STATE_DRAGGING:
+            Log.d(TAG, "[DrawerState] STATE_DRAGGING");
+            break;
 
-            case STATE_OPENING:
-                Log.d(TAG, "[DrawerState] STATE_OPENING");
-                break;
+        case STATE_OPENING:
+            Log.d(TAG, "[DrawerState] STATE_OPENING");
+            break;
 
-            case STATE_OPEN:
-                Log.d(TAG, "[DrawerState] STATE_OPEN");
-                break;
+        case STATE_OPEN:
+            Log.d(TAG, "[DrawerState] STATE_OPEN");
+            break;
 
-            default:
+        default:
         }
     }
 
@@ -495,7 +515,9 @@ public class MenuDrawer extends ViewGroup {
         mContentDropShadow.setBounds(contentLeft - dropShadowWidth, 0, contentLeft, height);
         mContentDropShadow.draw(canvas);
 
-        if (mArrowBitmap != null) drawArrow(canvas, contentLeft, openRatio);
+        if (mArrowBitmap != null) {
+            drawArrow(canvas, contentLeft, openRatio);
+        }
     }
 
     /**
@@ -622,8 +644,12 @@ public class MenuDrawer extends ViewGroup {
         final int width = MeasureSpec.getSize(widthMeasureSpec);
         final int height = MeasureSpec.getSize(heightMeasureSpec);
 
-        if (!mMenuWidthFromTheme) mMenuWidth = (int) (width * 0.8f);
-        if (mContentLeft == -1) setContentLeft(mMenuWidth);
+        if (!mMenuWidthFromTheme) {
+            mMenuWidth = (int) (width * 0.8f);
+        }
+        if (mContentLeft == -1) {
+            setContentLeft(mMenuWidth);
+        }
 
         final int menuWidthMeasureSpec = getChildMeasureSpec(widthMeasureSpec, 0, mMenuWidth);
         final int menuHeightMeasureSpec = getChildMeasureSpec(widthMeasureSpec, 0, height);
@@ -733,7 +759,9 @@ public class MenuDrawer extends ViewGroup {
             final int oldX = mContentLeft;
             final int x = mScroller.getCurrX();
 
-            if (x != oldX) setContentLeft(x);
+            if (x != oldX) {
+                setContentLeft(x);
+            }
             if (x != mScroller.getFinalX()) {
                 postDelayed(mDragRunnable, ANIMATION_DELAY);
                 return;
@@ -754,62 +782,68 @@ public class MenuDrawer extends ViewGroup {
         }
 
         // Always intercept events over the content while menu is visible.
-        if (mMenuVisible && ev.getX() > mContentLeft) return true;
+        if (mMenuVisible && ev.getX() > mContentLeft) {
+            return true;
+        }
 
         if (action != MotionEvent.ACTION_DOWN) {
-            if (mIsDragging) return true;
+            if (mIsDragging) {
+                return true;
+            }
         }
 
         switch (action) {
-            case MotionEvent.ACTION_DOWN: {
-                mLastMotionX = mInitialMotionX = ev.getX();
-                mLastMotionY = ev.getY();
-                final int contentLeft = mContentLeft;
-                final boolean allowDrag = (!mMenuVisible && mInitialMotionX < mDragBezelSize) ||
-                        (mMenuVisible && mInitialMotionX > contentLeft);
+        case MotionEvent.ACTION_DOWN: {
+            mLastMotionX = mInitialMotionX = ev.getX();
+            mLastMotionY = ev.getY();
+            final int contentLeft = mContentLeft;
+            final boolean allowDrag = (!mMenuVisible && mInitialMotionX < mDragBezelSize) ||
+                    (mMenuVisible && mInitialMotionX > contentLeft);
 
-                if (allowDrag) {
-                    setDrawerState(mMenuVisible ? STATE_OPEN : STATE_CLOSED);
-                    stopAnimation();
-                    mIsDragging = false;
-                }
-                break;
+            if (allowDrag) {
+                setDrawerState(mMenuVisible ? STATE_OPEN : STATE_CLOSED);
+                stopAnimation();
+                mIsDragging = false;
             }
-
-            case MotionEvent.ACTION_MOVE: {
-                final float x = ev.getX();
-                final float dx = x - mLastMotionX;
-                final float xDiff = Math.abs(dx);
-                final float y = ev.getY();
-                final float yDiff = Math.abs(y - mLastMotionY);
-                final int contentLeft = mContentLeft;
-
-                if (xDiff > mTouchSlop && xDiff > yDiff) {
-                    final boolean allowDrag = (!mMenuVisible && mInitialMotionX < mDragBezelSize)
-                            || (mMenuVisible && mInitialMotionX >= contentLeft);
-                    if (allowDrag) {
-                        setDrawerState(STATE_DRAGGING);
-                        mIsDragging = true;
-                        mLastMotionX = x;
-                        mLastMotionY = y;
-                    }
-                }
-                break;
-            }
-
-            /**
-             * If you click really fast, an up or cancel event is delivered here.
-             * Just snap content to whatever is closest.
-             * */
-            case MotionEvent.ACTION_CANCEL:
-            case MotionEvent.ACTION_UP: {
-                final int contentLeft = mContentLeft;
-                animateContent(contentLeft > mMenuWidth / 2, 0);
-                break;
-            }
+            break;
         }
 
-        if (mVelocityTracker == null) mVelocityTracker = VelocityTracker.obtain();
+        case MotionEvent.ACTION_MOVE: {
+            final float x = ev.getX();
+            final float dx = x - mLastMotionX;
+            final float xDiff = Math.abs(dx);
+            final float y = ev.getY();
+            final float yDiff = Math.abs(y - mLastMotionY);
+            final int contentLeft = mContentLeft;
+
+            if (xDiff > mTouchSlop && xDiff > yDiff) {
+                final boolean allowDrag = (!mMenuVisible && mInitialMotionX < mDragBezelSize)
+                        || (mMenuVisible && mInitialMotionX >= contentLeft);
+                if (allowDrag) {
+                    setDrawerState(STATE_DRAGGING);
+                    mIsDragging = true;
+                    mLastMotionX = x;
+                    mLastMotionY = y;
+                }
+            }
+            break;
+        }
+
+        /**
+         * If you click really fast, an up or cancel event is delivered here.
+         * Just snap content to whatever is closest.
+         * */
+        case MotionEvent.ACTION_CANCEL:
+        case MotionEvent.ACTION_UP: {
+            final int contentLeft = mContentLeft;
+            animateContent(contentLeft > mMenuWidth / 2, 0);
+            break;
+        }
+        }
+
+        if (mVelocityTracker == null) {
+            mVelocityTracker = VelocityTracker.obtain();
+        }
         mVelocityTracker.addMovement(ev);
 
         return mIsDragging;
@@ -819,77 +853,79 @@ public class MenuDrawer extends ViewGroup {
     public boolean onTouchEvent(MotionEvent ev) {
         final int action = ev.getAction() & MotionEvent.ACTION_MASK;
 
-        if (mVelocityTracker == null) mVelocityTracker = VelocityTracker.obtain();
+        if (mVelocityTracker == null) {
+            mVelocityTracker = VelocityTracker.obtain();
+        }
         mVelocityTracker.addMovement(ev);
 
         switch (action) {
-            case MotionEvent.ACTION_DOWN: {
-                mLastMotionX = mInitialMotionX = ev.getX();
-                final int contentLeft = mContentLeft;
-                final boolean allowDrag = (!mMenuVisible && mInitialMotionX <= mDragBezelSize)
-                        || (mMenuVisible && mInitialMotionX >= contentLeft);
+        case MotionEvent.ACTION_DOWN: {
+            mLastMotionX = mInitialMotionX = ev.getX();
+            final int contentLeft = mContentLeft;
+            final boolean allowDrag = (!mMenuVisible && mInitialMotionX <= mDragBezelSize)
+                    || (mMenuVisible && mInitialMotionX >= contentLeft);
 
-                if (allowDrag) {
-                    stopAnimation();
-                    setDrawerState(STATE_DRAGGING);
-                    stopAnimation();
-                    mIsDragging = true;
-                    startLayerTranslation();
-                }
-                break;
+            if (allowDrag) {
+                stopAnimation();
+                setDrawerState(STATE_DRAGGING);
+                stopAnimation();
+                mIsDragging = true;
+                startLayerTranslation();
             }
+            break;
+        }
 
-            case MotionEvent.ACTION_MOVE: {
-                final int contentLeft = mContentLeft;
+        case MotionEvent.ACTION_MOVE: {
+            final int contentLeft = mContentLeft;
 
-                if (!mIsDragging) {
-                    final float x = ev.getX();
-                    final float xDiff = Math.abs(x - mLastMotionX);
-                    final float y = ev.getY();
-                    final float yDiff = Math.abs(y - mLastMotionY);
+            if (!mIsDragging) {
+                final float x = ev.getX();
+                final float xDiff = Math.abs(x - mLastMotionX);
+                final float y = ev.getY();
+                final float yDiff = Math.abs(y - mLastMotionY);
 
-                    if (xDiff > mTouchSlop && xDiff > yDiff) {
-                        final boolean allowDrag = (!mMenuVisible && mInitialMotionX <= mDragBezelSize)
-                                || (mMenuVisible && mInitialMotionX >= contentLeft);
+                if (xDiff > mTouchSlop && xDiff > yDiff) {
+                    final boolean allowDrag = (!mMenuVisible && mInitialMotionX <= mDragBezelSize)
+                            || (mMenuVisible && mInitialMotionX >= contentLeft);
 
-                        if (allowDrag) {
-                            setDrawerState(STATE_DRAGGING);
-                            mIsDragging = true;
-                            mLastMotionX = x - mInitialMotionX > 0
-                                    ? mInitialMotionX + mTouchSlop
-                                    : mInitialMotionX - mTouchSlop;
-                        }
+                    if (allowDrag) {
+                        setDrawerState(STATE_DRAGGING);
+                        mIsDragging = true;
+                        mLastMotionX = x - mInitialMotionX > 0
+                                ? mInitialMotionX + mTouchSlop
+                                        : mInitialMotionX - mTouchSlop;
                     }
                 }
-
-                if (mIsDragging) {
-                    startLayerTranslation();
-
-                    final float x = ev.getX();
-                    final float dx = x - mLastMotionX;
-
-                    mLastMotionX = x;
-                    setContentLeft(Math.min(Math.max(contentLeft + (int) dx, 0), mMenuWidth));
-                }
-                break;
             }
 
-            case MotionEvent.ACTION_CANCEL:
-            case MotionEvent.ACTION_UP: {
-                final int contentLeft = mContentLeft;
+            if (mIsDragging) {
+                startLayerTranslation();
 
-                if (mIsDragging) {
-                    mVelocityTracker.computeCurrentVelocity(1000, mMaxVelocity);
-                    final int initialVelocity = (int) mVelocityTracker.getXVelocity();
-                    mLastMotionX = ev.getX();
-                    animateContent(mVelocityTracker.getXVelocity() > 0, initialVelocity);
+                final float x = ev.getX();
+                final float dx = x - mLastMotionX;
 
-                    // Close the menu when content is clicked while the menu is visible.
-                } else if (mMenuVisible && ev.getX() > contentLeft) {
-                    closeMenu();
-                }
-                break;
+                mLastMotionX = x;
+                setContentLeft(Math.min(Math.max(contentLeft + (int) dx, 0), mMenuWidth));
             }
+            break;
+        }
+
+        case MotionEvent.ACTION_CANCEL:
+        case MotionEvent.ACTION_UP: {
+            final int contentLeft = mContentLeft;
+
+            if (mIsDragging) {
+                mVelocityTracker.computeCurrentVelocity(1000, mMaxVelocity);
+                final int initialVelocity = (int) mVelocityTracker.getXVelocity();
+                mLastMotionX = ev.getX();
+                animateContent(mVelocityTracker.getXVelocity() > 0, initialVelocity);
+
+                // Close the menu when content is clicked while the menu is visible.
+            } else if (mMenuVisible && ev.getX() > contentLeft) {
+                closeMenu();
+            }
+            break;
+        }
         }
 
         return true;
