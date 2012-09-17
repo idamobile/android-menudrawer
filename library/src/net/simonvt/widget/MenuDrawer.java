@@ -66,6 +66,31 @@ public class MenuDrawer extends ViewGroup {
     private static final Interpolator ARROW_INTERPOLATOR = new AccelerateInterpolator();
 
     /**
+     * Interpolator used for peeking at the drawer.
+     */
+    private static final Interpolator PEEK_INTERPOLATOR = new PeekInterpolator();
+
+    /**
+     * Interpolator used when animating the drawer open/closed.
+     */
+    private static final Interpolator SMOOTH_INTERPOLATOR = new SmoothInterpolator();
+
+    /**
+     * Default delay from {@link #peekDrawer()} is called until first animation is run.
+     */
+    private static final long DEFAULT_PEEK_START_DELAY = 5000;
+
+    /**
+     * Default delay between each subsequent animation, after {@link #peekDrawer()} has been called.
+     */
+    private static final long DEFAULT_PEEK_DELAY = 10000;
+
+    /**
+     * The duration of the peek animation.
+     */
+    private static final int PEEK_DURATION = 5000;
+
+    /**
      * The maximum touch area width of the drawer in dp.
      */
     private static final int MAX_DRAG_BEZEL_DP = 16;
@@ -115,7 +140,15 @@ public class MenuDrawer extends ViewGroup {
      */
     public static final int STATE_OPEN = 8;
 
+    /**
+     * Distance in dp from closed position from where the drawer is considered closed with regards to touch events.
+     */
     private static final int CLOSE_ENOUGH = 3;
+
+    /**
+     * Indicates whether to use {@link View#setTranslationX(float)} when positioning views.
+     */
+    static final boolean USE_TRANSLATIONS = Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB;
 
     /**
      * Drawable used as menu overlay.
@@ -123,9 +156,14 @@ public class MenuDrawer extends ViewGroup {
     private Drawable mMenuOverlay;
 
     /**
+     * Defines whether the drop shadow is enabled.
+     */
+    private boolean mDropShadowEnabled;
+
+    /**
      * Drawable used as content drop shadow onto the menu.
      */
-    private Drawable mContentDropShadow;
+    private Drawable mDropShadowDrawable;
 
     /**
      * The width of the content drop shadow.
@@ -244,14 +282,34 @@ public class MenuDrawer extends ViewGroup {
     };
 
     /**
+     * Runnable used when the peek animation is running.
+     */
+    private final Runnable mPeekRunnable = new Runnable() {
+        @Override
+        public void run() {
+            peekDrawerInvalidate();
+        }
+    };
+
+    /**
+     * Runnable used for first call to {@link #startPeek()} after {@link #peekDrawer()}  has been called.
+     */
+    private Runnable mPeekStartRunnable;
+
+    /**
+     * Default delay between each subsequent animation, after {@link #peekDrawer()} has been called.
+     */
+    private long mPeekDelay;
+
+    /**
      * Scroller used when animating the drawer open/closed.
      */
     private Scroller mScroller;
 
     /**
-     * Interpolator used when animating the drawer open/closed.
+     * Scroller used for the peek drawer animation.
      */
-    private static final Interpolator SMOOTH_INTERPOLATOR = new SmoothInterpolator();
+    private Scroller mPeekScroller;
 
     /**
      * Velocity tracker used when animating the drawer open/closed after a drag.
@@ -273,12 +331,10 @@ public class MenuDrawer extends ViewGroup {
      */
     private boolean mOffsetMenu = true;
 
-    private int mCloseEnough;
-
     /**
-     * Indicates whether to use {@link View#setTranslationX(float)} when positioning views.
+     * Distance in px from closed position from where the drawer is considered closed with regards to touch events.
      */
-    static final boolean USE_TRANSLATIONS = Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB;
+    private int mCloseEnough;
 
     /**
      * Indicates whether the current layer type is {@link View#LAYER_TYPE_HARDWARE}.
@@ -304,12 +360,20 @@ public class MenuDrawer extends ViewGroup {
 
         final Drawable contentBackground = a.getDrawable(R.styleable.MenuDrawer_mdContentBackground);
         final Drawable menuBackground = a.getDrawable(R.styleable.MenuDrawer_mdMenuBackground);
+
         mMenuWidth = a.getDimensionPixelSize(R.styleable.MenuDrawer_mdMenuWidth, -1);
         mMenuWidthFromTheme = mMenuWidth != -1;
+
         final int arrowResId = a.getResourceId(R.styleable.MenuDrawer_mdArrowDrawable, 0);
         if (arrowResId != 0) {
             mArrowBitmap = BitmapFactory.decodeResource(getResources(), arrowResId);
         }
+
+        mDropShadowEnabled = a.getBoolean(R.styleable.MenuDrawer_mdDropShadowEnabled, true);
+        final int dropShadowColor = a.getColor(R.styleable.MenuDrawer_mdDropShadowColor, 0xFF000000);
+        setDropShadowColor(dropShadowColor);
+
+        mDropShadowWidth = a.getDimensionPixelSize(R.styleable.MenuDrawer_mdDropShadowWidth, dpToPx(6));
 
         a.recycle();
 
@@ -323,12 +387,6 @@ public class MenuDrawer extends ViewGroup {
         mContentView.setBackgroundDrawable(contentBackground);
         addView(mContentView);
 
-        mContentDropShadow = new GradientDrawable(GradientDrawable.Orientation.RIGHT_LEFT, new int[] {
-                0xFF000000,
-                0x00000000,
-        });
-        mDropShadowWidth = (int) (6 * getResources().getDisplayMetrics().density + 0.5f);
-
         mMenuOverlay = new ColorDrawable(0xFF000000);
 
         final ViewConfiguration configuration = ViewConfiguration.get(context);
@@ -336,10 +394,15 @@ public class MenuDrawer extends ViewGroup {
         mMaxVelocity = configuration.getScaledMaximumFlingVelocity();
 
         mScroller = new Scroller(context, SMOOTH_INTERPOLATOR);
+        mPeekScroller = new Scroller(context, PEEK_INTERPOLATOR);
 
         final float density = getResources().getDisplayMetrics().density;
         mMaxDragBezelSize = (int) (MAX_DRAG_BEZEL_DP * density + 0.5f);
         mCloseEnough = (int) (CLOSE_ENOUGH * density);
+    }
+
+    private int dpToPx(int dp) {
+        return (int) (getResources().getDisplayMetrics().density * dp + 0.5f);
     }
 
     /**
@@ -447,6 +510,85 @@ public class MenuDrawer extends ViewGroup {
     }
 
     /**
+     * Defines whether the drop shadow is enabled.
+     *
+     * @param enabled Whether the drop shadow is enabled.
+     */
+    public void setDropShadowEnabled(boolean enabled) {
+        mDropShadowEnabled = enabled;
+        invalidate();
+    }
+
+    /**
+     * Sets the color of the drop shadow.
+     *
+     * @param color The color of the drop shadow.
+     */
+    public void setDropShadowColor(int color) {
+        final int endColor = color & 0x00FFFFFF;
+        mDropShadowDrawable = new GradientDrawable(GradientDrawable.Orientation.RIGHT_LEFT, new int[] {
+                color,
+                endColor,
+        });
+        invalidate();
+    }
+
+    /**
+     * Sets the width of the drop shadow.
+     *
+     * @param width The width of the drop shadow in px.
+     */
+    public void setDropShadowWidth(int width) {
+        mDropShadowWidth = width;
+        invalidate();
+    }
+
+    /**
+     * Animates the drawer slightly open until the user opens the drawer.
+     */
+    public void peekDrawer() {
+        peekDrawer(DEFAULT_PEEK_START_DELAY, DEFAULT_PEEK_DELAY);
+    }
+
+    /**
+     * Animates the drawer slightly open. If delay is larger than 0, this happens until the user opens the drawer.
+     *
+     * @param delay The delay (in milliseconds) between each run of the animation. If 0, this animation is only run
+     *              once.
+     */
+    public void peekDrawer(long delay) {
+        peekDrawer(DEFAULT_PEEK_START_DELAY, delay);
+    }
+
+    /**
+     * Animates the drawer slightly open. If delay is larger than 0, this happens until the user opens the drawer.
+     *
+     * @param startDelay The delay (in milliseconds) until the animation is first run.
+     * @param delay      The delay (in milliseconds) between each run of the animation. If 0, this animation is only run
+     *                   once.
+     */
+    public void peekDrawer(final long startDelay, final long delay) {
+        if (startDelay < 0) {
+            throw new IllegalArgumentException("startDelay must be zero or lager.");
+        }
+        if (delay < 0) {
+            throw new IllegalArgumentException("delay must be zero or lager");
+        }
+
+        removeCallbacks(mPeekRunnable);
+        removeCallbacks(mPeekStartRunnable);
+
+        mPeekDelay = delay;
+        mPeekStartRunnable = new Runnable() {
+            @Override
+            public void run() {
+                startPeek();
+            }
+        };
+        postDelayed(mPeekStartRunnable, startDelay);
+    }
+
+    /**
      * Sets the drawer state.
      *
      * @param state The drawer state. Must be one of {@link #STATE_CLOSED}, {@link #STATE_CLOSING},
@@ -494,7 +636,7 @@ public class MenuDrawer extends ViewGroup {
     /**
      * Sets the drawer drag mode. Can be either {@link #MENU_DRAG_CONTENT} or {@link #MENU_DRAG_WINDOW}.
      *
-     * @param dragMode
+     * @param dragMode The drag mode.
      */
     public void setDragMode(int dragMode) {
         mDragMode = dragMode;
@@ -512,8 +654,10 @@ public class MenuDrawer extends ViewGroup {
         mMenuOverlay.setAlpha((int) (MAX_MENU_OVERLAY_ALPHA * (1.f - openRatio)));
         mMenuOverlay.draw(canvas);
 
-        mContentDropShadow.setBounds(contentLeft - dropShadowWidth, 0, contentLeft, height);
-        mContentDropShadow.draw(canvas);
+        if (mDropShadowEnabled) {
+            mDropShadowDrawable.setBounds(contentLeft - dropShadowWidth, 0, contentLeft, height);
+            mDropShadowDrawable.draw(canvas);
+        }
 
         if (mArrowBitmap != null) {
             drawArrow(canvas, contentLeft, openRatio);
@@ -691,11 +835,7 @@ public class MenuDrawer extends ViewGroup {
     private void stopAnimation() {
         removeCallbacks(mDragRunnable);
         mScroller.abortAnimation();
-        final int contentLeft = mContentLeft;
-
         stopLayerTranslation();
-
-        setContentLeft(contentLeft);
     }
 
     /**
@@ -703,11 +843,10 @@ public class MenuDrawer extends ViewGroup {
      */
     private void completeAnimation() {
         mScroller.abortAnimation();
-        stopLayerTranslation();
-
         final int finalX = mScroller.getFinalX();
         setContentLeft(finalX);
         setDrawerState(finalX == 0 ? STATE_CLOSED : STATE_OPEN);
+        stopLayerTranslation();
     }
 
     /**
@@ -771,6 +910,63 @@ public class MenuDrawer extends ViewGroup {
         completeAnimation();
     }
 
+    /**
+     * Starts peek drawer animation.
+     */
+    private void startPeek() {
+        final int menuWidth = mMenuWidth;
+        final int dx = menuWidth / 3;
+        mPeekScroller.startScroll(0, 0, dx, 0, PEEK_DURATION);
+
+        startLayerTranslation();
+        peekDrawerInvalidate();
+    }
+
+    /**
+     * Callback when each frame in the peek drawer animation should be drawn.
+     */
+    private void peekDrawerInvalidate() {
+        if (mPeekScroller.computeScrollOffset()) {
+            final int oldX = mContentLeft;
+            final int x = mPeekScroller.getCurrX();
+
+            if (x != oldX) setContentLeft(x);
+            if (!mPeekScroller.isFinished()) {
+                postDelayed(mPeekRunnable, ANIMATION_DELAY);
+                return;
+            } else {
+                mPeekStartRunnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        startPeek();
+                    }
+                };
+                postDelayed(mPeekStartRunnable, mPeekDelay);
+            }
+        }
+
+        completePeek();
+    }
+
+    /**
+     * Called when the peek drawer animation has successfully completed.
+     */
+    private void completePeek() {
+        mPeekScroller.abortAnimation();
+        setContentLeft(0);
+        setDrawerState(STATE_CLOSED);
+        stopLayerTranslation();
+    }
+
+    /**
+     * Stops ongoing peek drawer animation.
+     */
+    private void stopPeek() {
+        removeCallbacks(mPeekStartRunnable);
+        removeCallbacks(mPeekRunnable);
+        stopLayerTranslation();
+    }
+
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
         final int action = ev.getAction() & MotionEvent.ACTION_MASK;
@@ -778,6 +974,7 @@ public class MenuDrawer extends ViewGroup {
         if (action == MotionEvent.ACTION_DOWN && mMenuVisible && mContentLeft <= mCloseEnough) {
             setContentLeft(0);
             stopAnimation();
+            stopPeek();
             setDrawerState(STATE_CLOSED);
         }
 
@@ -803,6 +1000,7 @@ public class MenuDrawer extends ViewGroup {
             if (allowDrag) {
                 setDrawerState(mMenuVisible ? STATE_OPEN : STATE_CLOSED);
                 stopAnimation();
+                    stopPeek();
                 mIsDragging = false;
             }
             break;
@@ -867,8 +1065,8 @@ public class MenuDrawer extends ViewGroup {
 
             if (allowDrag) {
                 stopAnimation();
+                    stopPeek();
                 setDrawerState(STATE_DRAGGING);
-                stopAnimation();
                 mIsDragging = true;
                 startLayerTranslation();
             }
@@ -952,5 +1150,6 @@ public class MenuDrawer extends ViewGroup {
         Bundle state = (Bundle) in;
         final boolean menuOpen = state.getBoolean(STATE_MENU_VISIBLE);
         setContentLeft(menuOpen ? mMenuWidth : 0);
+        mDrawerState = menuOpen ? STATE_OPEN : STATE_CLOSED;
     }
 }
