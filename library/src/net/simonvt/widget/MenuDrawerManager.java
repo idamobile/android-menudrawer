@@ -1,6 +1,7 @@
 package net.simonvt.widget;
 
 import net.simonvt.menudrawer.R;
+
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.Parcelable;
@@ -82,16 +83,16 @@ public class MenuDrawerManager {
             mMenuAttached = true;
 
             switch (mDragMode) {
-            case MenuDrawer.MENU_DRAG_CONTENT:
-                attachToContent();
-                break;
+                case MenuDrawer.MENU_DRAG_CONTENT:
+                    attachToContent();
+                    break;
 
-            case MenuDrawer.MENU_DRAG_WINDOW:
-                attachToDecor();
-                break;
+                case MenuDrawer.MENU_DRAG_WINDOW:
+                    attachToDecor();
+                    break;
 
-            default:
-                throw new RuntimeException("Unknown menu mode: " + mDragMode);
+                default:
+                    throw new RuntimeException("Unknown menu mode: " + mDragMode);
             }
         }
     }
@@ -166,10 +167,14 @@ public class MenuDrawerManager {
         mMenuDrawer.openMenu();
     }
 
+    /**
+     * Opens the menu.
+     * @param withAnimation true to open menu with animation, false otherwise
+     */
     public void openMenu(boolean withAnimation) {
         mMenuDrawer.openMenu(withAnimation);
     }
-
+    
     /**
      * Closes the menu.
      */
@@ -177,10 +182,14 @@ public class MenuDrawerManager {
         mMenuDrawer.closeMenu();
     }
 
+    /**
+     * Closes the menu.
+     * @param withAnimation true to close menu with animation, false otherwise
+     */
     public void closeMenu(boolean withAnimation) {
         mMenuDrawer.closeMenu(withAnimation);
     }
-
+    
     /**
      * Indicates whether the menu is currently visible.
      *
@@ -248,15 +257,15 @@ public class MenuDrawerManager {
      */
     public void setContentView(int layoutResId) {
         switch (mDragMode) {
-        case MenuDrawer.MENU_DRAG_CONTENT:
-            mContentContainer.removeAllViews();
-            LayoutInflater inflater = mActivity.getLayoutInflater();
-            inflater.inflate(layoutResId, mContentContainer, true);
-            break;
+            case MenuDrawer.MENU_DRAG_CONTENT:
+                mContentContainer.removeAllViews();
+                LayoutInflater inflater = mActivity.getLayoutInflater();
+                inflater.inflate(layoutResId, mContentContainer, true);
+                break;
 
-        case MenuDrawer.MENU_DRAG_WINDOW:
-            mActivity.setContentView(layoutResId);
-            break;
+            case MenuDrawer.MENU_DRAG_WINDOW:
+                mActivity.setContentView(layoutResId);
+                break;
         }
     }
 
@@ -277,14 +286,14 @@ public class MenuDrawerManager {
      */
     public void setContentView(View view, LayoutParams params) {
         switch (mDragMode) {
-        case MenuDrawer.MENU_DRAG_CONTENT:
-            mContentContainer.removeAllViews();
-            mContentContainer.addView(view, params);
-            break;
+            case MenuDrawer.MENU_DRAG_CONTENT:
+                mContentContainer.removeAllViews();
+                mContentContainer.addView(view, params);
+                break;
 
-        case MenuDrawer.MENU_DRAG_WINDOW:
-            mActivity.setContentView(view, params);
-            break;
+            case MenuDrawer.MENU_DRAG_WINDOW:
+                mActivity.setContentView(view, params);
+                break;
         }
     }
 
