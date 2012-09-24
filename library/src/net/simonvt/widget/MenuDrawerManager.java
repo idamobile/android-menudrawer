@@ -161,6 +161,15 @@ public class MenuDrawerManager {
     }
 
     /**
+     * Toggles the menu open and close.
+     *
+     * @param animate Whether open/close should be animated.
+     */
+    public void toggleMenu(boolean animate) {
+        mMenuDrawer.toggleMenu(animate);
+    }
+
+    /**
      * Opens the menu.
      */
     public void openMenu() {
@@ -169,12 +178,13 @@ public class MenuDrawerManager {
 
     /**
      * Opens the menu.
-     * @param withAnimation true to open menu with animation, false otherwise
+     *
+     * @param animate Whether open/close should be animated.
      */
-    public void openMenu(boolean withAnimation) {
-        mMenuDrawer.openMenu(withAnimation);
+    public void openMenu(boolean animate) {
+        mMenuDrawer.openMenu(animate);
     }
-    
+
     /**
      * Closes the menu.
      */
@@ -184,12 +194,13 @@ public class MenuDrawerManager {
 
     /**
      * Closes the menu.
-     * @param withAnimation true to close menu with animation, false otherwise
+     *
+     * @param animate Whether open/close should be animated.
      */
-    public void closeMenu(boolean withAnimation) {
-        mMenuDrawer.closeMenu(withAnimation);
+    public void closeMenu(boolean animate) {
+        mMenuDrawer.closeMenu(animate);
     }
-    
+
     /**
      * Indicates whether the menu is currently visible.
      *
