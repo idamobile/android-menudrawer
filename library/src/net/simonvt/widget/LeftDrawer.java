@@ -1,7 +1,6 @@
 package net.simonvt.widget;
 
 import net.simonvt.menudrawer.R;
-
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.drawable.GradientDrawable;
@@ -122,10 +121,12 @@ public class LeftDrawer extends MenuDrawer {
         if (USE_TRANSLATIONS) {
             mContentView.setTranslationX(offsetPixels);
             offsetMenu(offsetPixels);
+            requestLayout();
             invalidate();
         } else {
             mContentView.offsetLeftAndRight(offsetPixels - mContentView.getLeft());
             offsetMenu(offsetPixels);
+            requestLayout();
             invalidate();
         }
     }

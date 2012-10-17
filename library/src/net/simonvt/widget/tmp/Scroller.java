@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package net.simonvt.widget;
+package net.simonvt.widget.tmp;
 
 import android.content.Context;
 import android.hardware.SensorManager;
