@@ -1,6 +1,7 @@
 package net.simonvt.widget;
 
 import net.simonvt.menudrawer.R;
+import net.simonvt.widget.tmp.Scroller;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -757,7 +758,7 @@ public abstract class MenuDrawer extends ViewGroup {
         final int width = MeasureSpec.getSize(widthMeasureSpec);
         final int height = MeasureSpec.getSize(heightMeasureSpec);
 
-        if (!mMenuWidthFromTheme) mMenuWidth = (int) (width * 0.8f);
+        if (!mMenuWidthFromTheme) mMenuWidth = (int) (width * 0.87f);
         if (mOffsetPixels == -1) setOffsetPixels(mMenuWidth);
 
         final int menuWidthMeasureSpec = getChildMeasureSpec(widthMeasureSpec, 0, mMenuWidth);
