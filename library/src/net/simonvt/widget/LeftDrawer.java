@@ -9,8 +9,6 @@ import android.view.MotionEvent;
 
 public class LeftDrawer extends MenuDrawer {
 
-    private static final String TAG = "LeftDrawer";
-
     public LeftDrawer(Context context) {
         super(context);
     }
@@ -138,13 +136,13 @@ public class LeftDrawer extends MenuDrawer {
 
     @Override
     protected boolean onDownAllowDrag(MotionEvent ev) {
-        return (!mMenuVisible && mInitialMotionX <= mDragBezelSize)
+        return (!mMenuVisible && mInitialMotionX <= mTouchWidth)
                 || (mMenuVisible && mInitialMotionX >= mOffsetPixels);
     }
 
     @Override
-    protected boolean onMoveAllowDrag(MotionEvent ev) {
-        return (!mMenuVisible && mInitialMotionX <= mDragBezelSize)
+    protected boolean onMoveAllowDrag(MotionEvent ev, float diff) {
+        return (!mMenuVisible && mInitialMotionX <= mTouchWidth && (diff > 0))
                 || (mMenuVisible && mInitialMotionX >= mOffsetPixels);
     }
 

@@ -12,7 +12,7 @@
 	<groupId>net.simonvt</groupId>
 	<artifactId>android-menudrawer-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>1.0.0-SNAPSHOT</version>
+	<version>1.0.0</version>
 
 	<name>Android MenuDrawer (Parent)</name>
 	<description>A menu drawer implementation which allows dragging of both the content, and the entire window.</description>
@@ -50,6 +50,8 @@
 		<java.version>1.6</java.version>
 		<android.version>4.1.1.4</android.version>
 		<android.platform>16</android.platform>
+
+		<android-support.version>r7</android-support.version>
 	</properties>
 
 	<dependencyManagement>
@@ -97,6 +99,26 @@
 				<configuration>
 					<autoVersionSubmodules>true</autoVersionSubmodules>
 				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-checkstyle-plugin</artifactId>
+				<version>2.9.1</version>
+				<configuration>
+					<failsOnError>true</failsOnError>
+					<!-- Relative to module directory. -->
+					<configLocation>../checkstyle.xml</configLocation>
+					<consoleOutput>true</consoleOutput>
+				</configuration>
+				<executions>
+					<execution>
+						<phase>verify</phase>
+						<goals>
+							<goal>checkstyle</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

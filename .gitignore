@@ -1,8 +1,11 @@
 /*
 
 !.gitignore
+!.travis.yml
+!CHANGELOG.md
 !README.md
 !LICENSE
+!checkstyle.xml
 !pom.xml
 
 !art/
@@ -20,6 +23,7 @@ library/*
 samples/*
 !samples/src/
 !samples/res/
+!samples/libs/
 !samples/AndroidManifest.xml
 !samples/build.xml
 !samples/pom.xml

@@ -9,8 +9,6 @@ import android.view.MotionEvent;
 
 public class RightDrawer extends MenuDrawer {
 
-    private static final String TAG = "RightDrawer";
-
     public RightDrawer(Context context) {
         super(context);
     }
@@ -153,16 +151,16 @@ public class RightDrawer extends MenuDrawer {
         final int width = getWidth();
         final int initialMotionX = (int) mInitialMotionX;
 
-        return (!mMenuVisible && initialMotionX >= width - mDragBezelSize)
+        return (!mMenuVisible && initialMotionX >= width - mTouchWidth)
                 || (mMenuVisible && initialMotionX <= width - mOffsetPixels);
     }
 
     @Override
-    protected boolean onMoveAllowDrag(MotionEvent ev) {
+    protected boolean onMoveAllowDrag(MotionEvent ev, float diff) {
         final int width = getWidth();
         final int initialMotionX = (int) mInitialMotionX;
 
-        return (!mMenuVisible && initialMotionX >= width - mDragBezelSize)
+        return (!mMenuVisible && initialMotionX >= width - mTouchWidth && (diff < 0))
                 || (mMenuVisible && initialMotionX <= width - mOffsetPixels);
     }
 
