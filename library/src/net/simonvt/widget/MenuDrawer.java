@@ -847,7 +847,7 @@ public abstract class MenuDrawer extends ViewGroup {
         final int width = MeasureSpec.getSize(widthMeasureSpec);
         final int height = MeasureSpec.getSize(heightMeasureSpec);
 
-        if (!mMenuWidthSet) mMenuWidth = (int) (width * 0.9f);
+        if (!mMenuWidthSet) mMenuWidth = (int) (width * 0.87f);
         if (mOffsetPixels == -1) setOffsetPixels(mMenuWidth);
 
         final int menuWidthMeasureSpec = getChildMeasureSpec(widthMeasureSpec, 0, mMenuWidth);
