@@ -12,7 +12,7 @@
 	<groupId>net.simonvt</groupId>
 	<artifactId>android-menudrawer-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>1.0.0</version>
+	<version>1.0.0-idamobile</version>
 
 	<name>Android MenuDrawer (Parent)</name>
 	<description>A menu drawer implementation which allows dragging of both the content, and the entire window.</description>
@@ -54,6 +54,19 @@
 		<android-support.version>r7</android-support.version>
 	</properties>
 
+  <distributionManagement>
+      <repository>
+          <id>ida-repo-releases</id>
+          <name>iDa Mobile Repo - Releases</name>
+          <url>http://project.idamob.ru:8000/nexus/content/repositories/releases</url>
+      </repository>
+      <snapshotRepository>
+          <id>ida-repo-snapshots</id>
+          <name>iDa Mobile Repo - Snapshots</name>
+          <url>http://project.idamob.ru:8000/nexus/content/repositories/snapshots</url>
+      </snapshotRepository>
+  </distributionManagement>
+
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -63,6 +76,13 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
+
+  <repositories>
+      <repository>
+          <id>ida-repo-public</id>
+          <url>http://project.idamob.ru:8000/nexus/content/groups/public/</url>
+      </repository>
+  </repositories>
 
 	<build>
 		<pluginManagement>
