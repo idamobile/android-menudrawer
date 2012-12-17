@@ -1,5 +1,7 @@
 package net.simonvt.widget;
 
+import android.content.res.Resources;
+import android.util.TypedValue;
 import net.simonvt.menudrawer.R;
 import net.simonvt.widget.tmp.Scroller;
 
@@ -87,7 +89,7 @@ public abstract class MenuDrawer extends ViewGroup {
     /**
      * The duration of the peek animation.
      */
-    private static final int PEEK_DURATION = 5000;
+    private static final int PEEK_DURATION = 2000;
 
     /**
      * The maximum touch area width of the drawer in dp.
@@ -985,11 +987,17 @@ public abstract class MenuDrawer extends ViewGroup {
      */
     protected void startPeek() {
         final int menuWidth = mMenuWidth;
-        final int dx = menuWidth / 3;
+        final int dx = dpToPx(30);
         mPeekScroller.startScroll(0, 0, dx, 0, PEEK_DURATION);
 
         startLayerTranslation();
         peekDrawerInvalidate();
+    }
+
+    private int dpToPx(float dp) {
+        Resources r = getContext().getResources();
+        return (int) (TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, dp, r.getDisplayMetrics()) + 0.5f);
     }
 
     /**
